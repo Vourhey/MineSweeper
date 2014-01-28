@@ -2,6 +2,7 @@
 #include <QTime>
 #include <QtGlobal>
 #include <QMouseEvent>
+#include <QAction>
 
 #include "thefield.h"
 
@@ -11,27 +12,31 @@ TheField::TheField(QWidget *parent)
     : QWidget(parent)
 {
     m_field = 0;
-    setFixedSize(160, 160);
+    m_difficulty = 0;
+    m_row = m_column = 0;
+    squareSize = 20;
 
-    newGame();
+    setDifficulty(3);
 }
 
 TheField::~TheField()
 {
-    for(int i = 0; i < 8; ++i) {
+    freeField();    
+}
+
+void TheField::freeField()
+{
+    for(int i = 0; i < m_row; ++i) {
         delete [] m_field[i];
     }
     delete [] m_field;
 }
 
-// field is 8x8 cells
+// field is m_row * m_column cells
 void TheField::newGame()
 {
-    m_field = new Cell*[8];
-    for(int i = 0; i < 8; ++i) {
-        m_field[i] = new Cell[8];
-
-        for(int j = 0; j < 8; j++) {
+    for(int i = 0; i < m_row; ++i) {
+        for(int j = 0; j < m_column; j++) {
             m_field[i][j].isMine    = false;
             m_field[i][j].isHidden  = true;
             m_field[i][j].isFlag    = false;
@@ -41,10 +46,11 @@ void TheField::newGame()
 
     randomMines();
     setNumbers();
+    repaint();
 
     // DEBUG
-    for(int i = 0; i < 8; ++i) {
-        for(int j = 0; j < 8; ++j) {
+    for(int i = 0; i < m_row; ++i) {
+        for(int j = 0; j < m_column; ++j) {
             if(m_field[i][j].isMine) {
                 printf("m ");
             } else {
@@ -58,17 +64,17 @@ void TheField::newGame()
 // add 10 bombs to the field
 void TheField::randomMines()
 {
-    int n = 10;
+    int n = m_mines;
     int x, y;
 
     qsrand(QTime::currentTime().msec());
     while(n != 0) {
-        x = qrand() % 8;
-        y = qrand() % 8;
+        x = qrand() % m_column;
+        y = qrand() % m_row;
 
         while(m_field[y][x].isMine) {   // it's a bad algorithm
-            x = qrand() % 8;    // i'm looking for a new position
-            y = qrand() % 8;
+            x = qrand() % m_column;    // i'm looking for a new position
+            y = qrand() % m_row;
         }
 
         m_field[y][x].isMine = true;
@@ -78,13 +84,14 @@ void TheField::randomMines()
 
 bool TheField::isValid(int x, int y)
 {
-    if(y < 0 || x < 0 || y == 8 || x == 8) {
+    if(y < 0 || x < 0 || y == m_row || x == m_column) {
         return false;
     }
 
     return true;
 }
 
+// how much are there a near mines
 qint8 TheField::nearMines(int x, int y)
 {
     int count = 0;
@@ -105,8 +112,8 @@ qint8 TheField::nearMines(int x, int y)
 
 void TheField::setNumbers()
 {
-    for(int i = 0; i < 8; ++i) {
-        for(int j = 0; j < 8; ++j) {
+    for(int i = 0; i < m_row; ++i) {
+        for(int j = 0; j < m_column; ++j) {
             if(!m_field[i][j].isMine) {
                 m_field[i][j].mines = nearMines(j, i);
             }
@@ -114,12 +121,56 @@ void TheField::setNumbers()
     }
 }
 
-void TheField::cellFromPos(int x, int y, int *toX, int *toY)
+void TheField::setDifficulty(int d)
 {
-    *toX = x / 20;
-    *toY = y / 20;
+    if(d == -1) {
+        QAction *act = qobject_cast<QAction*>(sender());
+        d = act->data().toInt();
+    }
+
+    if(d == m_difficulty) {
+        // newGame();
+        return;
+    }
+
+    m_difficulty = d;
+    freeField();
+
+    switch(d) {
+    case 1:     // Easy
+        m_row = m_column = 9;
+        m_mines = 10;
+        break;
+    case 2:     // Medium
+        m_row = m_column = 16;
+        m_mines = 40;
+        break;
+    case 3:     // Hard
+        m_row = 16;
+        m_column = 30;
+        m_mines = 99;
+        break;
+    case 4:     // Custom
+        m_row = m_column = 10;
+        m_mines = 20;
+        break;
+    }
+
+    m_field = new Cell*[m_row];
+    for(int i = 0; i < m_row; ++i) {
+        m_field[i] = new Cell[m_column]; 
+    }
+
+    newGame();
 }
 
+void TheField::cellFromPos(int x, int y, int *toX, int *toY)
+{
+    *toX = (x - offset) / squareSize;
+    *toY = y / squareSize;
+}
+
+// show near cells
 void TheField::discoverNear(int x, int y)
 {
     for(int i = y - 1; i <= (y+1); ++i) {
@@ -159,8 +210,8 @@ void TheField::mouseReleaseEvent(QMouseEvent *ev)
             
             if(m_field[y][x].isMine) {
 
-                for(int i = 0; i < 8; ++i) {
-                    for(int j = 0; j < 8; ++j) {
+                for(int i = 0; i < m_row; ++i) {
+                    for(int j = 0; j < m_column; ++j) {
                         if(m_field[i][j].isMine) {
                             m_field[i][j].isHidden = false;
                         }
@@ -182,6 +233,14 @@ void TheField::mouseReleaseEvent(QMouseEvent *ev)
     }
 }
 
+void TheField::resizeEvent(QResizeEvent *ev)
+{
+    int cellsOnWidth = ev->size().width() / m_column;
+    int cellsOnHeight = ev->size().height() / m_row;
+
+    squareSize = qMin(cellsOnWidth, cellsOnHeight);
+}
+
 void TheField::paintEvent(QPaintEvent *ev)
 {
     Q_UNUSED(ev)
@@ -189,10 +248,10 @@ void TheField::paintEvent(QPaintEvent *ev)
     QPainter p(this);
     int i, j;
 
-    int squareSize = 20;
+    offset = (width() - m_column * squareSize) / 2;
 
-    for(i = 0; i < 8; ++i) {
-        for(j = 0; j < 8; ++j) {
+    for(i = 0; i < m_row; ++i) {
+        for(j = 0; j < m_column; ++j) {
 
             if(m_field[i][j].isHidden) {
                 p.setBrush(Qt::gray);
@@ -203,9 +262,9 @@ void TheField::paintEvent(QPaintEvent *ev)
                 p.setBrush(Qt::red);
             }
 
-            p.drawRect(j*squareSize, i*squareSize, squareSize, squareSize);
+            p.drawRect(j*squareSize + offset, i*squareSize, squareSize, squareSize);
             if(!m_field[i][j].isHidden && m_field[i][j].mines) {
-                p.drawText(j*squareSize, i*squareSize+squareSize, QString::number(m_field[i][j].mines));
+                p.drawText(j*squareSize + offset, i*squareSize+squareSize, QString::number(m_field[i][j].mines));
             }
             p.setBrush(Qt::white);
 

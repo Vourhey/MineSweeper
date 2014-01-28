@@ -9,13 +9,16 @@ class TheField : public QWidget
 public:
     TheField(QWidget *parent = 0);
     ~TheField();
-    
+
+public slots:    
     void newGame();
+    void setDifficulty(int d = -1);
 
 protected:
     void mousePressEvent(QMouseEvent *ev);
     void mouseReleaseEvent(QMouseEvent *ev);
     void paintEvent(QPaintEvent *ev);
+    void resizeEvent(QResizeEvent *ev);
     
 private:
     void randomMines();
@@ -24,6 +27,7 @@ private:
     qint8 nearMines(int x, int y);
     void cellFromPos(int x, int y, int *toX, int *toY);
     void discoverNear(int x, int y);
+    void freeField();
 
     struct Cell
     {
@@ -35,8 +39,16 @@ private:
 
     Cell **m_field;
 
+    qint8 m_row;
+    qint8 m_column;
+    qint8 m_mines;
+    qint8 m_difficulty;
+
     int lastX;
     int lastY;
+
+    int squareSize;
+    int offset;
 };
 
 #endif // THEFIELD_H
