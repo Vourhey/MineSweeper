@@ -10,6 +10,9 @@ public:
     TheField(QWidget *parent = 0);
     ~TheField();
 
+signals:
+    void flagSet(int number);
+
 public slots:    
     void newGame();
     void setDifficulty(int d = -1);
@@ -28,6 +31,8 @@ private:
     void cellFromPos(int x, int y, int *toX, int *toY);
     void discoverNear(int x, int y);
     void freeField();
+    void gameWon();
+    void gameOver();
 
     struct Cell
     {
@@ -39,10 +44,14 @@ private:
 
     Cell **m_field;
 
+    bool isReadOnly;
+
     qint8 m_row;
     qint8 m_column;
     qint8 m_mines;
     qint8 m_difficulty;
+    int restOfCells;
+    qint8 numberOfFlags;
 
     int lastX;
     int lastY;

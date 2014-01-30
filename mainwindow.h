@@ -7,6 +7,8 @@ class TheField;
 class QAction;
 class QToolBar;
 class QStatusBar;
+class QLabel;
+class QComboBox;
 
 class MainWindow : public QMainWindow
 {
@@ -31,10 +33,17 @@ private:
         *quitAct;
     QAction *showToolbarAct,
         *showStatusbarAct;
+    QAction *easyAct,
+        *mediumAct,
+        *hardAct,
+        *customAct;
     QAction *aboutAct;
 
     QToolBar *m_toolBar;
     QStatusBar *m_statusBar;
+    QLabel *minesLabel,
+        *timerLabel;
+    QComboBox *difficultyBox;
 };
 
 #endif // MAINWINDOW_H

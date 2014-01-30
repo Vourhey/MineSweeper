@@ -4,6 +4,8 @@
 #include <QToolBar>
 #include <QStatusBar>
 #include <QMessageBox>
+#include <QLabel>
+#include <QComboBox>
 
 #include "mainwindow.h"
 #include "thefield.h"
@@ -12,6 +14,7 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     m_field = new TheField;
+    resize(400, 500);
     setCentralWidget(m_field);
 
     createActs();
@@ -44,6 +47,33 @@ void MainWindow::createActs()
     showStatusbarAct->setCheckable(true);
     showStatusbarAct->setChecked(true);
 
+    easyAct = new QAction(tr("Easy"), this);
+    easyAct->setCheckable(true);
+    easyAct->setData(1);
+    connect(easyAct, SIGNAL(triggered()), m_field, SLOT(setDifficulty()));
+
+    mediumAct = new QAction(tr("Medium"), this);
+    mediumAct->setCheckable(true);
+    mediumAct->setData(2);
+    connect(mediumAct, SIGNAL(triggered()), m_field, SLOT(setDifficulty()));
+
+    hardAct = new QAction(tr("Hard"), this);
+    hardAct->setCheckable(true);
+    hardAct->setData(3);
+    connect(hardAct, SIGNAL(triggered()), m_field, SLOT(setDifficulty()));
+
+    customAct = new QAction(tr("Custom"), this);
+    customAct->setCheckable(true);
+    customAct->setData(4);
+    connect(customAct, SIGNAL(triggered()), m_field, SLOT(setDifficulty()));
+
+    QActionGroup *actGroup = new QActionGroup(this);
+    actGroup->addAction(easyAct);
+    actGroup->addAction(mediumAct);
+    actGroup->addAction(hardAct);
+    actGroup->addAction(customAct);
+    easyAct->setChecked(true);
+
     aboutAct = new QAction(tr("About"), this);
     aboutAct->setShortcut(QKeySequence::HelpContents);
     connect(aboutAct, SIGNAL(triggered()), SLOT(aboutSlot()));
@@ -65,7 +95,11 @@ void MainWindow::createMenus()
     m->addAction(showToolbarAct);
     m->addAction(showStatusbarAct);
     m->addSeparator();
-    m->addMenu(tr("Difficulty"));
+    m = m->addMenu(tr("Difficulty"));
+    m->addAction(easyAct);
+    m->addAction(mediumAct);
+    m->addAction(hardAct);
+    m->addAction(customAct);
 
     m = mBar->addMenu(tr("Help"));
     m->addAction(aboutAct);
@@ -84,6 +118,19 @@ void MainWindow::createStatusbar()
 {
     m_statusBar = statusBar();
     connect(showStatusbarAct, SIGNAL(toggled(bool)), m_statusBar, SLOT(setVisible(bool)));
+
+    minesLabel = new QLabel(tr("Mines: %d/%d"), this);
+    m_statusBar->addPermanentWidget(minesLabel);
+
+    timerLabel = new QLabel(tr("Time: 00:50"), this);
+    m_statusBar->addPermanentWidget(timerLabel);
+
+    difficultyBox = new QComboBox(this);
+    difficultyBox->addItem(tr("Easy"));
+    difficultyBox->addItem(tr("Medium"));
+    difficultyBox->addItem(tr("Hard"));
+    difficultyBox->addItem(tr("Custom"));
+    m_statusBar->addPermanentWidget(difficultyBox);
 }
 
 void MainWindow::aboutSlot()
