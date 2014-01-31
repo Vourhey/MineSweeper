@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+class QTimer;
+
 class TheField : public QWidget
 {
     Q_OBJECT
@@ -10,11 +12,15 @@ public:
     TheField(QWidget *parent = 0);
     ~TheField();
 
+    QTimer *timer() const;
+
 signals:
-    void flagSet(int number);
+    void flagSet(int number, int mines);
+    void resetTime();
 
 public slots:    
     void newGame();
+    void pause(bool b);
     void setDifficulty(int d = -1);
 
 protected:
@@ -43,6 +49,7 @@ private:
     };
 
     Cell **m_field;
+    QTimer *m_timer;
 
     bool isReadOnly;
 

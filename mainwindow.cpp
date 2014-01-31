@@ -6,6 +6,7 @@
 #include <QMessageBox>
 #include <QLabel>
 #include <QComboBox>
+#include <QTimer>
 
 #include "mainwindow.h"
 #include "thefield.h"
@@ -14,6 +15,10 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
     m_field = new TheField;
+    connect(m_field, SIGNAL(flagSet(int,int)), SLOT(updateFlags(int,int)));
+    connect(m_field->timer(), SIGNAL(timeout()), SLOT(updateTime()));
+    connect(m_field, SIGNAL(resetTime()), SLOT(resetTime()));
+    m_time = 0;
     resize(400, 500);
     setCentralWidget(m_field);
 
@@ -21,6 +26,8 @@ MainWindow::MainWindow(QWidget *parent)
     createMenus();
     createToolbar();
     createStatusbar();
+
+    m_field->setDifficulty(1);
 }
 
 void MainWindow::createActs()
@@ -32,6 +39,7 @@ void MainWindow::createActs()
     pauseAct = new QAction(tr("Pause"), this);
     pauseAct->setCheckable(true);
     pauseAct->setShortcut(Qt::Key_P);
+    connect(pauseAct, SIGNAL(toggled(bool)), m_field, SLOT(pause(bool)));
 
     showHighScoreAct = new QAction(tr("Show High Scores"), this);
 
@@ -119,10 +127,10 @@ void MainWindow::createStatusbar()
     m_statusBar = statusBar();
     connect(showStatusbarAct, SIGNAL(toggled(bool)), m_statusBar, SLOT(setVisible(bool)));
 
-    minesLabel = new QLabel(tr("Mines: %d/%d"), this);
+    minesLabel = new QLabel(this);
     m_statusBar->addPermanentWidget(minesLabel);
 
-    timerLabel = new QLabel(tr("Time: 00:50"), this);
+    timerLabel = new QLabel(tr("Time: 00:00"), this);
     m_statusBar->addPermanentWidget(timerLabel);
 
     difficultyBox = new QComboBox(this);
@@ -131,6 +139,32 @@ void MainWindow::createStatusbar()
     difficultyBox->addItem(tr("Hard"));
     difficultyBox->addItem(tr("Custom"));
     m_statusBar->addPermanentWidget(difficultyBox);
+    connect(difficultyBox, SIGNAL(activated(int)), SLOT(difficulty(int)));
+}
+
+void MainWindow::updateFlags(int flags, int mines)
+{
+    minesLabel->setText(tr("Mines: %1/%2").arg(flags).arg(mines));
+}
+
+void MainWindow::updateTime()
+{
+    ++m_time;
+
+    int min = m_time / 60;
+    int sec = m_time % 60;
+    timerLabel->setText(tr("Time: %1:%2").arg(min).arg(sec));
+}
+
+void MainWindow::difficulty(int item)
+{
+    m_field->setDifficulty(item + 1);
+}
+
+void MainWindow::resetTime()
+{
+    m_time = 0;
+    timerLabel->setText(tr("Time: 00:00"));
 }
 
 void MainWindow::aboutSlot()

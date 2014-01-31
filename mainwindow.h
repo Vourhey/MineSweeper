@@ -18,6 +18,10 @@ public:
 
 private slots:
     void aboutSlot();
+    void updateFlags(int flags, int mines);
+    void updateTime();
+    void difficulty(int item);
+    void resetTime();
 
 private:
     void createActs();
@@ -26,6 +30,7 @@ private:
     void createStatusbar();
 
     TheField *m_field;
+    int m_time;
 
     QAction *newAct,
         *pauseAct,

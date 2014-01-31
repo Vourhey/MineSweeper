@@ -4,6 +4,7 @@
 #include <QMouseEvent>
 #include <QAction>
 #include <QMessageBox>
+#include <QTimer>
 
 #include "thefield.h"
 
@@ -16,7 +17,8 @@ TheField::TheField(QWidget *parent)
     m_difficulty = 0;
     m_row = m_column = 0;
 
-    setDifficulty(1);
+    m_timer = new QTimer(this);
+    m_timer->setInterval(1000);
 }
 
 TheField::~TheField()
@@ -32,6 +34,20 @@ void TheField::freeField()
     delete [] m_field;
 }
 
+QTimer *TheField::timer() const
+{
+    return m_timer;
+}
+
+void TheField::pause(bool b)
+{
+    if(b) {
+        m_timer->stop();
+    } else {
+        m_timer->start();
+    }
+}
+
 // field is m_row * m_column cells
 void TheField::newGame()
 {
@@ -39,6 +55,8 @@ void TheField::newGame()
     restOfCells = m_row * m_column - m_mines;
     printf("%d\n", restOfCells);
     numberOfFlags = 0;
+    emit flagSet(0, m_mines);
+    emit resetTime();
 
     for(int i = 0; i < m_row; ++i) {
         for(int j = 0; j < m_column; j++) {
@@ -166,11 +184,18 @@ void TheField::setDifficulty(int d)
         m_field[i] = new Cell[m_column]; 
     }
 
+    int cellsOnWidth = width() / m_column;
+    int cellsOnHeight = height() / m_row;
+
+    squareSize = qMin(cellsOnWidth, cellsOnHeight);
+
     newGame();
 }
 
 void TheField::gameWon()
 {
+    m_timer->stop();
+//    emit resetTime();
     isReadOnly = true;
 
     QMessageBox::information(this, tr("You won!"), tr("You won!"));
@@ -178,6 +203,17 @@ void TheField::gameWon()
 
 void TheField::gameOver()
 {
+    m_timer->stop();
+//    emit resetTime();
+
+    for(int i = 0; i < m_row; ++i) {
+        for(int j = 0; j < m_column; ++j) {
+            if(m_field[i][j].isMine) {
+                m_field[i][j].isHidden = false;
+            }
+        }
+    }
+
     isReadOnly = true;
 }
 
@@ -196,7 +232,6 @@ void TheField::discoverNear(int x, int y)
             if(isValid(j, i) && m_field[i][j].isHidden) {
                 m_field[i][j].isHidden = false;
                 --restOfCells;
-                printf("%d\n", restOfCells);
 
                 if(!m_field[i][j].mines) {
                     discoverNear(j, i);
@@ -227,6 +262,10 @@ void TheField::mouseReleaseEvent(QMouseEvent *ev)
             return;
         }
 
+        if(!m_timer->isActive()) {
+            m_timer->start();
+        }
+
         if(ev->button() == Qt::LeftButton) {
 
             if(m_field[y][x].isFlag) {
@@ -234,20 +273,10 @@ void TheField::mouseReleaseEvent(QMouseEvent *ev)
             }
             
             if(m_field[y][x].isMine) {
-
-                for(int i = 0; i < m_row; ++i) {
-                    for(int j = 0; j < m_column; ++j) {
-                        if(m_field[i][j].isMine) {
-                            m_field[i][j].isHidden = false;
-                        }
-                    }
-                }
                 gameOver();
-
             } else {
                 m_field[y][x].isHidden = false;
                 --restOfCells;
-                printf("%d\n", restOfCells);
 
                 if(!m_field[y][x].mines) {
                     discoverNear(x, y);
@@ -266,7 +295,7 @@ void TheField::mouseReleaseEvent(QMouseEvent *ev)
                 --numberOfFlags;
             }
             
-            emit flagSet(numberOfFlags);
+            emit flagSet(numberOfFlags, m_mines);
         }
         repaint();
 
