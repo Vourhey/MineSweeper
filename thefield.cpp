@@ -195,16 +195,15 @@ void TheField::setDifficulty(int d)
 void TheField::gameWon()
 {
     m_timer->stop();
-//    emit resetTime();
     isReadOnly = true;
 
+//  emit addScore();
     QMessageBox::information(this, tr("You won!"), tr("You won!"));
 }
 
 void TheField::gameOver()
 {
     m_timer->stop();
-//    emit resetTime();
 
     for(int i = 0; i < m_row; ++i) {
         for(int j = 0; j < m_column; ++j) {
@@ -217,10 +216,38 @@ void TheField::gameOver()
     isReadOnly = true;
 }
 
+void TheField::openCell(int x, int y)
+{
+    if(!isValid(x, y)) {
+        return;
+    }
+
+    if(m_field[y][x].isFlag || !m_field[y][x].isHidden) {
+        return;
+    }
+
+    if(m_field[y][x].isMine) {
+        gameOver();
+    } else {
+        m_field[y][x].isHidden = false;
+        --restOfCells;
+
+        if(!m_field[y][x].mines) {
+            discoverNear(x, y);
+        }
+    }
+}
+
 void TheField::cellFromPos(int x, int y, int *toX, int *toY)
 {
-    *toX = (x - offset) / squareSize;
-    *toY = y / squareSize;
+    printf("x = %d offset = %d\n", x, offset);
+    if((x - offset) >= 0) {
+        *toX = (x - offset) / squareSize;
+        *toY = y / squareSize;
+    } else {
+        *toX = -10;
+        *toY = -10;
+    }
 }
 
 // show near cells
@@ -240,6 +267,23 @@ void TheField::discoverNear(int x, int y)
 
         }
     }
+}
+
+void TheField::mouseDoubleClickEvent(QMouseEvent *ev)
+{
+    int x, y;
+    cellFromPos(ev->x(), ev->y(), &x, &y);
+
+    if(isReadOnly) {
+        return;
+    }
+
+    for(int i = y - 1; i <= (y+1); ++i) {
+        for(int j = x - 1; j <= (x+1); ++j) {
+                openCell(j, i);
+        }
+    }
+    repaint();
 }
 
 void TheField::mousePressEvent(QMouseEvent *ev)
@@ -268,20 +312,7 @@ void TheField::mouseReleaseEvent(QMouseEvent *ev)
 
         if(ev->button() == Qt::LeftButton) {
 
-            if(m_field[y][x].isFlag) {
-                return;
-            }
-            
-            if(m_field[y][x].isMine) {
-                gameOver();
-            } else {
-                m_field[y][x].isHidden = false;
-                --restOfCells;
-
-                if(!m_field[y][x].mines) {
-                    discoverNear(x, y);
-                }
-            }
+            openCell(x, y);
 
         } else if(ev->button() == Qt::RightButton) {
             if(numberOfFlags == m_mines && !m_field[y][x].isFlag) {

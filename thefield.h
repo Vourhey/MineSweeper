@@ -17,6 +17,7 @@ public:
 signals:
     void flagSet(int number, int mines);
     void resetTime();
+    void addScore();
 
 public slots:    
     void newGame();
@@ -24,6 +25,7 @@ public slots:
     void setDifficulty(int d = -1);
 
 protected:
+    void mouseDoubleClickEvent(QMouseEvent *ev);
     void mousePressEvent(QMouseEvent *ev);
     void mouseReleaseEvent(QMouseEvent *ev);
     void paintEvent(QPaintEvent *ev);
@@ -34,6 +36,7 @@ private:
     void setNumbers();
     bool isValid(int x, int y);
     qint8 nearMines(int x, int y);
+    void openCell(int x, int y);
     void cellFromPos(int x, int y, int *toX, int *toY);
     void discoverNear(int x, int y);
     void freeField();

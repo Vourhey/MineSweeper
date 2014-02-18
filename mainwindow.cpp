@@ -10,14 +10,18 @@
 
 #include "mainwindow.h"
 #include "thefield.h"
+#include "highscore.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {
+    m_highScore = 0;
+
     m_field = new TheField;
     connect(m_field, SIGNAL(flagSet(int,int)), SLOT(updateFlags(int,int)));
     connect(m_field->timer(), SIGNAL(timeout()), SLOT(updateTime()));
     connect(m_field, SIGNAL(resetTime()), SLOT(resetTime()));
+    connect(m_field, SIGNAL(addScore()), SLOT(addToHighScore()));
     m_time = 0;
     resize(400, 500);
     setCentralWidget(m_field);
@@ -42,6 +46,7 @@ void MainWindow::createActs()
     connect(pauseAct, SIGNAL(toggled(bool)), m_field, SLOT(pause(bool)));
 
     showHighScoreAct = new QAction(tr("Show High Scores"), this);
+    connect(showHighScoreAct, SIGNAL(triggered()), SLOT(showHighScore()));
 
     quitAct = new QAction(tr("Quit"), this);
     quitAct->setShortcut(QKeySequence::Quit);
@@ -165,6 +170,24 @@ void MainWindow::resetTime()
 {
     m_time = 0;
     timerLabel->setText(tr("Time: 00:00"));
+}
+
+void MainWindow::showHighScore()
+{
+    if(m_highScore == 0) {
+        m_highScore = new HighScore(this);
+    }
+
+    m_highScore->exec();
+}
+
+void MainWindow::addToHighScore()
+{
+    if(m_highScore == 0) {
+        m_highScore = new HighScore(this);
+    }
+
+    m_highScore->exec();
 }
 
 void MainWindow::aboutSlot()

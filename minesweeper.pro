@@ -11,10 +11,12 @@ CONFIG += debug
 # Input
 SOURCES += main.cpp \
     thefield.cpp    \
-    mainwindow.cpp
+    mainwindow.cpp  \
+    highscore.cpp
 
 HEADERS += thefield.h   \
-    mainwindow.h
+    mainwindow.h        \
+    highscore.h
 
 OBJECTS_DIR = .obj/
 MOC_DIR = .moc/

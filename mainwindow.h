@@ -9,6 +9,7 @@ class QToolBar;
 class QStatusBar;
 class QLabel;
 class QComboBox;
+class HighScore;
 
 class MainWindow : public QMainWindow
 {
@@ -22,6 +23,8 @@ private slots:
     void updateTime();
     void difficulty(int item);
     void resetTime();
+    void showHighScore();
+    void addToHighScore();
 
 private:
     void createActs();
@@ -30,6 +33,7 @@ private:
     void createStatusbar();
 
     TheField *m_field;
+    HighScore *m_highScore;
     int m_time;
 
     QAction *newAct,
